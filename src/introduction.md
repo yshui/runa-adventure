@@ -2,7 +2,7 @@
 
 So yeah, I am writing a Wayland compositor (actually, more like a library for compositors). Since I am in this rabbit hole already, I thought I might as well document my journey through it.
 
-This series isn't meant to be a tutorial about how to write a Wayland compositor in Rust (although, if this project is successful I would need to write one of that too). It's more of a record of my struggle with Rust and/or Wayland. Consequently, these chapters aren't going to have a logical order.
+This series isn't meant to be a tutorial on how to write a Wayland compositor in Rust (although, if this project ends up being successful, then I would need to write one of those too). It's more of a record of my struggle with Rust and/or Wayland. Consequently, these chapters aren't going to be in a logical order, I am just writing things down as I encounter them.
 
 ## Why?
 
