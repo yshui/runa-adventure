@@ -1,6 +1,7 @@
-# Table of contents
+[Introduction](introduction.md)
 
-* [Introduction](introduction.md)
+# Adventures
+
 * [Overview]()
 * [I/O]()
 * [Lifetime & variance woes Pt.1]()
@@ -9,3 +10,6 @@
 * [Object storage]()
 * [Events]()
 
+# Project udpates
+
+* [Jan 2023](jan-2023-update.md)
