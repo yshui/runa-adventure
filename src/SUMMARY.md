@@ -12,4 +12,4 @@
 
 # Project udpates
 
-* [Jan 2023](jan-2023-update.md)
+[Jan 2023](jan-2023-update.md)
