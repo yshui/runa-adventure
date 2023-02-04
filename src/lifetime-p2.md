@@ -54,6 +54,8 @@ Remove the object from `objects`, put it back after handling the message.
 
 This solves both problem, but carries some mental baggage. `handle_message` might call into other parts of the compositor toolbox, which might make the assumption that the object is still in `objects`. This seems error-prone.
 
+This also has the same problem as solution 3, it does extra `HashMap` lookups for the re-insertion.
+
 ### Solution 3
 
 Make `handle_message` not take `self`, i.e.
