@@ -1,4 +1,4 @@
-# The Rust borrow checker is annoying
+# The Rust borrow checker is annoying, Pt. 2
 
 OK, quick wayland primer. One of the central concepts in wayland is object. Each client connected to the wayland server has a set of objects bound to it. Client can invoke functions on those objects by sending a message to server with the right object ID.
 
@@ -50,6 +50,12 @@ This also make the lifetime of `Object`s unpredictable. Previously, objects will
 
 ### Solution 2
 
+Remove the object from `objects`, put it back after handling the message.
+
+This solves both problem, but carries some mental baggage. `handle_message` might call into other parts of the compositor toolbox, which might make the assumption that the object is still in `objects`. This seems error-prone.
+
+### Solution 3
+
 Make `handle_message` not take `self`, i.e.
 
 ```rust
@@ -58,7 +64,7 @@ Object::handle_message(&mut objects, message);
 
 This solves both problems, but if `handle_message` needs access to the object itself, it will have to get it again from `objects`, essentially doing extra `HashMap` lookups.
 
-### Solution 3
+### Solution 4
 
 Cache modifications to `objects` while it was borrowed, i.e.
 
@@ -74,7 +80,7 @@ And this doesn't solve the second problem.
 
 ## Conclusion
 
-Which one is the best solution? I don't know. I am inclined to go with solution 2 as it's the least bad, but that's not the main point here - I wanted to present a case where the Rust's lifetime mechanism meets a real world use case, and the problems that came with it. Although not an unsolvable problem, all of the solutions presented have some awkwardness to them, and that is the kind of trade-off one might face when working with Rust.
+Which one is the best solution? I don't know. I am inclined to go with solution 3 as it's the least bad, but that's not the main point here - I wanted to present a case where the Rust's lifetime mechanism meets a real world use case, and the problems that came with it. Although not an unsolvable problem, all of the solutions presented have some awkwardness to them, and that is the kind of trade-off one might face when working with Rust.
 
 I am not an expert on Rust, so _please_ let me now if you think there is a better solution that I missed.
 
