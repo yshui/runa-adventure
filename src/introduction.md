@@ -8,7 +8,7 @@ This series isn't meant to be a tutorial on how to write a Wayland compositor in
 
 Well, there are a couple of reasons. Understanding code, even those written by one's self, is hard. Having a written record will help future me understand why certain design decisions are made.
 
-Also since I don't consider myself an expert at Rust, and _definitely_ not one either at Wayland, I hope other people reading this can point out things I missed and perhaps lead to a better design.
+And since I don't consider myself an expert on Rust, and _definitely_ not one on Wayland either, I hope other people reading this can point out things I missed and perhaps lead to a better design.
 
 Lastly, it's difficult to remain motivated on a big project like this. Knowing there are other people caring about this project would help me a lot. How do I gather some attention without something concrete to show? Well, I write about it.
 
@@ -34,7 +34,7 @@ So why am I starting my own library? Without going in to details (as that's what
 
 The reader (you) is expected to have some moderate understanding of Rust. But I don't expect you to know anything about Wayland. Basically, me when I started this project.
 
-## Expectation (of me/this project)
+## Expectation (of me/of this project)
 
 So, what's this project currently at?
 
