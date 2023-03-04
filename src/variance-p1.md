@@ -103,6 +103,8 @@ fn test<T: Lockable>(t: &T) {
 }
 ```
 
+And looking back, it's now clear our `Locked<'a>::iter` function was wrong: the `Locked` iterator yields items that lives as long as the `Lockable` type, yet if you think about the semantic of a lock, `Locked` really should only yield item that live as long as the `Guard`.
+
 (If you really want to keep the lifetime on `Locked<'a>`, there is a way:
 ```rust
 trait Lockable {
