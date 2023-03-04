@@ -57,9 +57,9 @@ error[E0597]: `x` does not live long enough
 
 What is going on here? If we take the error message at face value, it doesn't make a lot of sense: `x` is dropped while still borrowed, OK. Why was it still borrowed? Because it was used later. For what? For its destructor, because it was dropped later. What?
 
-It's a head-scratcher, isn't it? Indeed, this error took me quite sometime to decipher, but I think I can explain what this actually means.
+It's a head-scratcher, isn't it? Indeed, this error took me quite sometime to decipher, but I think I can explain what it actually means.
 
-First, lets put the elided lifetime parameter back into `fn lock`:
+First, let me put the elided lifetime parameter back into `fn lock`:
 
 ```rust
 fn lock<'a>(&'a self) -> Self::Guard<'a>;
