@@ -3,9 +3,9 @@ You should probably avoid putting lifetime parameters on traits
 
 Having a lifetime parameter attached to a trait makes the trait so much harder to work with - I only realized after a lot of hardship fighting with the borrow checker.
 
-Let me give you an example I recently encountered.
+Here is an example I recently encountered.
 
-I tried to make my code generic over some sort of "lockable" types. Like a `Mutex<T>`, you can call `.lock()` on it, and after you locked it there is a set of methods you can call on `T`. I didn't want to lock the user into a predetermined `Mutex` type, so I came up with this trait:
+I tried to make my code generic over some sort of "lockable" types. Like a `Mutex<T>`, which you can call `.lock()` on, and after you locked it there is a set of methods you can call on `T`. I didn't want to lock the user into a predetermined `Mutex` type, so I came up with this trait:
 
 ```rust
 trait Lockable {
@@ -23,7 +23,7 @@ trait Locked<'a> {
     type Iter: Iterator<Item = &'a u32> + 'a;
 
     /// A scapegoat example to illustrate the problem I am going to have.
-    /// This is not an unnatural method to have - imagine a `Mutex<HashMap>`,
+    /// This is not that weird a method to have - imagine a `Mutex<HashMap>`,
     /// after locking it you might want to iterate over its keys.
     fn iter(&'a self) -> Self::Iter;
 }
@@ -40,7 +40,7 @@ fn test<T: Lockable>(t: &T) {
 
 Should work, right?
 
-No. Instead, we get this super confusing error:
+No. Instead, we get this very confusing error:
 
 ```
 error[E0597]: `x` does not live long enough
@@ -55,19 +55,19 @@ error[E0597]: `x` does not live long enough
    | borrow might be used here, when `x` is dropped and runs the destructor for type `<T as Lockable>::Locked<'_>`
 ```
 
-What is going on here? If we take the error message at face value, it doesn't make a lot of sense: `x` is dropped while still borrowed, OK. Why was it still borrowed? Because it was dropped later and its destructor needs it. What?
+What is going on here? If we take the error message at face value, it doesn't make a lot of sense: `x` is dropped while still borrowed, OK. Why was it still borrowed? Because it was used later. For what? For its destructor, because it was dropped later. What?
 
-It's a head-scratcher, isn't it? Indeed, it took me quite sometime to decipher, but I think I can explain to you what this actually means.
+It's a head-scratcher, isn't it? Indeed, this error took me quite sometime to decipher, but I think I can explain what this actually means.
 
 First, lets put the elided lifetime parameter back into `fn lock`:
 
 ```rust
-fn lock<'a>(&'a self) -> Self::Locked<'a>;
+fn lock<'a>(&'a self) -> Self::Guard<'a>;
 ```
 
 When we call `t.lock()`, the compiler must figure out a lifetime to assign to `'a`. This lifetime is used in the return type `Self::Guard<'a>`, and all the compiler know about `Self::Guard<'a>` is that it implements `Locked<'a>`. `Locked<'a>` is a trait, which means it is invariant w.r.t lifetime `'a`. (If you don't know what variance is, see [here](https://doc.rust-lang.org/reference/subtyping.html), and [here](https://doc.rust-lang.org/nomicon/subtyping.html).)
 
-And here lies the problem, the compiler doesn't have the flexibility to lengthen or shorten this lifetime, so it use `'a` as is. In the context of our function `test`:
+And here lies the problem, the compiler doesn't have the flexibility to lengthen or shorten this lifetime, so it use `'a` from `&'a self` as is. In the context of our function `test`:
 
 ```rust
 fn test<'lifetime_of_t, T: Lockable>(t: &'lifetime_of_t T) {
@@ -76,12 +76,12 @@ fn test<'lifetime_of_t, T: Lockable>(t: &'lifetime_of_t T) {
 }
 ```
 
-This mean the type of `x` is actually `T::Guard<'lifetime_of_t>`, which implements `Locked<'lifetime_of_t>`. And when we call `x.iter()`, it returns `Locked::Iter: 'lifetime_of_t`. Which means `x` is actually borrowed for `'lifetime_of_t`! It's borrowed for a lifetime that is *longer* than its own lifetime!
+This mean the type of `x` is actually `T::Guard<'lifetime_of_t>`, which implements `Locked<'lifetime_of_t>`. And when we call `x.iter()`, it returns `Locked::Iter: 'lifetime_of_t`. Which means `x` is actually borrowed for `'lifetime_of_t`! It's borrowed for a lifetime that is actually *longer* than its own lifetime! (I think it's fair to say rustc's diagnostic here can use some polish.)
 
 And once we figured this out, the solution is simple. We need to make the return type of `lock()` covariant w.r.t the lifetime of `&self`. For example, we can make it:
 
 ```rust
-fn lock(&self) -> &Self::Guard;
+fn lock<'a>(&'a self) -> &'a Self::Guard;
 ```
 
 Of course, the lock guard usually won't be as simple as just a reference. More practically, we can use something like this:
