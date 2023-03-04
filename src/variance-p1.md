@@ -67,7 +67,7 @@ fn lock<'a>(&'a self) -> Self::Guard<'a>;
 
 When we call `t.lock()`, the compiler must figure out a lifetime to assign to `'a`. This lifetime is used in the return type `Self::Guard<'a>`, and all the compiler know about `Self::Guard<'a>` is that it implements `Locked<'a>`. `Locked<'a>` is a trait, which means it is invariant w.r.t lifetime `'a`. (If you don't know what variance is, see [here](https://doc.rust-lang.org/reference/subtyping.html), and [here](https://doc.rust-lang.org/nomicon/subtyping.html).)
 
-And here lies the problem, the compiler doesn't have the flexibility to lengthen or shorten this lifetime, so it use `'a` from `&'a self` as is. In the context of our function `test`:
+And here lies the problem, in the context of our function `test`:
 
 ```rust
 fn test<'lifetime_of_t, T: Lockable>(t: &'lifetime_of_t T) {
@@ -76,9 +76,9 @@ fn test<'lifetime_of_t, T: Lockable>(t: &'lifetime_of_t T) {
 }
 ```
 
-This mean the type of `x` is actually `T::Guard<'lifetime_of_t>`, which implements `Locked<'lifetime_of_t>`. And when we call `x.iter()`, it returns `Locked::Iter: 'lifetime_of_t`. Which means `x` is actually borrowed for `'lifetime_of_t`! It's borrowed for a lifetime that is actually *longer* than its own lifetime! (I think it's fair to say rustc's diagnostic here can use some polish.)
+This mean the type of `x` is actually `T::Guard<'lifetime_of_t>`, which implements `Locked<'lifetime_of_t>`. And since `Locked<'_>` is invariant w.r.t the lifetime, `Guard` implementing `Locked<'lifetime_of_t>` doesn't mean it implements `Locked<'shorter>` for any `'shorter` lifetime. When we call `x.iter()`, it can only return `Locked::Iter: 'lifetime_of_t`. Which means `x` is actually borrowed for `'lifetime_of_t`! It's borrowed for a lifetime that is actually *longer* than its own lifetime! (I think it's fair to say rustc's diagnostic here can use some polish.)
 
-And once we figured this out, the solution is simple. We need to make the return type of `lock()` covariant w.r.t the lifetime of `&self`. For example, we can make it:
+And once we figured this out, the solution is simple. One way is to make the return type of `lock()` covariant w.r.t the lifetime of `&self`. For example, we can make it:
 
 ```rust
 fn lock<'a>(&'a self) -> &'a Self::Guard;
