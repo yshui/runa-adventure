@@ -76,7 +76,7 @@ fn test<'lifetime_of_t, T: Lockable>(t: &'lifetime_of_t T) {
 }
 ```
 
-This mean the type of `x` is actually `T::Guard<'lifetime_of_t>`, which implements `Locked<'lifetime_of_t>`. And since `Locked<'_>` is invariant w.r.t the lifetime, `Guard` implementing `Locked<'lifetime_of_t>` doesn't mean it implements `Locked<'shorter>` for any `'shorter` lifetime. When we call `x.iter()`, it can only return `Locked::Iter: 'lifetime_of_t`. Which means `x` is actually borrowed for `'lifetime_of_t`! It's borrowed for a lifetime that is actually *longer* than its own lifetime! (I think it's fair to say rustc's diagnostic here can use some polish.)
+This mean the type of `x` is actually `T::Guard<'lifetime_of_t>`, which implements `Locked<'lifetime_of_t>`. And since `Locked<'_>` is invariant w.r.t the lifetime, `Guard` implementing `Locked<'lifetime_of_t>` doesn't mean it implements `Locked<'shorter>` for any `'shorter` lifetime. When we call `x.iter()`, it can only return `Locked::Iter: 'lifetime_of_t`. Which means `x` is actually borrowed for `'lifetime_of_t`! It's borrowed for a lifetime that is actually longer than its *own* lifetime! (I think it's fair to say rustc's diagnostic here can use some polish.)
 
 And once we figured this out, the solution is simple. One way is to make the return type of `lock()` covariant w.r.t the lifetime of `&self`. For example, we can make it:
 
