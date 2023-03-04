@@ -103,4 +103,17 @@ fn test<T: Lockable>(t: &T) {
 }
 ```
 
+(If you really want to keep the lifetime on `Locked<'a>`, there is a way:
+```rust
+trait Lockable {
+    type Guard<'a>: Locked<'a> where Self: 'a;
+    fn lock(&self) -> Self::Guard<'_>;
+}
+trait Locked<'a> {
+    type Iter<'b>: Iterator<Item = &'b u32> + 'b where 'a: 'b, Self: 'b;
+    fn iter<'b>(&'b self) -> Self::Iter<'b> where 'a: 'b;
+}
+```
+I am not trying to show lifetime parameter is absolutely not workable, I just want to say it often is an unexpected trap for new comers. Plus, there are other ways this invariance can be annoying.)
+
 I ended up not needing such a trait at all, but I think this is a really good example why having lifetime parameter on a trait might not be a very good idea. In fact, most of the traits in `std` doesn't have an explicit lifetime parameter. There are cases where the use of a lifetime parameter can be justified, `serde::de::Deserialize` is such an example. But in general, you probably should think twice before using it.
