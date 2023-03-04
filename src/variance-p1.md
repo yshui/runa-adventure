@@ -3,7 +3,7 @@ You probably should avoid putting lifetime parameters on traits
 
 Having a lifetime parameter attached to a trait makes the trait so much harder to work with - I only realized after a lot of hardship fighting with the borrow checker.
 
-Here is an example I recently encountered.
+Here is an example I encountered recently.
 
 I tried to make my code generic over some sort of "lockable" types. Like a `Mutex<T>`, which you can call `.lock()` on, and after you locked it there is a set of methods you can call on `T`. I didn't want to lock the user into a predetermined `Mutex` type, so I came up with this trait:
 
