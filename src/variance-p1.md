@@ -1,4 +1,4 @@
-You should probably avoid putting lifetime parameters on traits
+You probably should avoid putting lifetime parameters on traits
 ===============================================================
 
 Having a lifetime parameter attached to a trait makes the trait so much harder to work with - I only realized after a lot of hardship fighting with the borrow checker.
