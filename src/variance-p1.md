@@ -78,20 +78,18 @@ fn test<'lifetime_of_t, T: Lockable>(t: &'lifetime_of_t T) {
 
 This mean the type of `x` is actually `T::Guard<'lifetime_of_t>`, which implements `Locked<'lifetime_of_t>`. And since `Locked<'_>` is invariant w.r.t the lifetime, `Guard` implementing `Locked<'lifetime_of_t>` doesn't mean it implements `Locked<'shorter>` for any `'shorter` lifetime. When we call `x.iter()`, it can only return `Locked::Iter: 'lifetime_of_t`. Which means `x` is actually borrowed for `'lifetime_of_t`! It's borrowed for a lifetime that is actually longer than its *own* lifetime! (I think it's fair to say rustc's diagnostic here can use some polish.)
 
-And once we figured this out, the solution is simple. One way is do away the lifetime parameter. For example, we can make it:
+And once we figured this out, the solution is simple. One way is do away the lifetime parameter on `Locked`. For example, we can make it:
 
 ```rust
-type Guard: Locked;
-fn lock<'a>(&'a self) -> &'a Self::Guard;
+type Guard<'a>: Locked + 'a;
 ```
 
-Of course, the lock guard usually won't be as simple as just a reference. More practically, we can use something like this:
+The whole example:
 
 ```rust
 trait Lockable {
-    type Target: Locked;
     // Unlike `Trait<'a>`, `Trait + 'a` is covariant w.r.t. `'a`.
-    type Guard<'a>: std::ops::DerefMut<Target = Self::Target> + 'a where Self: 'a;
+    type Guard<'a>: Locked + 'a where Self: 'a;
     fn lock(&self) -> Self::Guard<'_>;
 }
 trait Locked {
