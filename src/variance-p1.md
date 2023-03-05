@@ -70,13 +70,15 @@ When we call `t.lock()`, the compiler must figure out a lifetime to assign to `'
 And here lies the problem, in the context of our function `test`:
 
 ```rust
-fn test<'lifetime_of_t, T: Lockable>(t: &'lifetime_of_t T) {
+fn test<T: Lockable>(t: &T) {
     let x = t.lock();
     // ...
 }
 ```
 
-This mean the type of `x` is actually `T::Guard<'lifetime_of_t>`, which implements `Locked<'lifetime_of_t>`. And since `Locked<'_>` is invariant w.r.t the lifetime, `Guard` implementing `Locked<'lifetime_of_t>` doesn't mean it implements `Locked<'shorter>` for any `'shorter` lifetime. When we call `x.iter()`, it can only return `Locked::Iter: 'lifetime_of_t`. Which means `x` is actually borrowed for `'lifetime_of_t`! It's borrowed for a lifetime that is actually longer than its *own* lifetime! (I think it's fair to say rustc's diagnostic here can use some polish.)
+Let's call the type of `x` `T::Guard<'lock>`. `'lock` is the lifetime of the implicit borrow of `t` that happened when we called `t.lock()`. Since `x` borrows from this lifetime (because of the signature of `fn lock`), `'lock` must last longer than `x`.
+
+Based on the trait bound, `T::Guard<'lock>` implements `Locked<'lock>`. And because of trait's invariance w.r.t. its lifetime, `Guard` implementing `Locked<'lock>` doesn't mean it implements `Locked<'shorter>` for any `'shorter` lifetime. When we call `x.iter()`, it can only return `Locked::Iter: 'lock`. Which means `x` is actually borrowed for `'lock`! It's borrowed for a lifetime that is actually longer than its *own* lifetime! (I think it's fair to say rustc's diagnostic here, while not being wrong, can use some polish.)
 
 And once we figured this out, the solution is simple. One way is do away the lifetime parameter on `Locked`. For example, we can make it:
 
@@ -118,3 +120,7 @@ trait Locked<'a> {
 I am not trying to show lifetime parameter is absolutely not workable, I just want to say it often is an unexpected trap for new comers. Plus, there are other ways this invariance can be annoying.)
 
 I ended up not needing such a trait at all, but I think this is a really good example why having lifetime parameter on a trait might not be a very good idea. In fact, most of the traits in `std` doesn't have an explicit lifetime parameter. There are cases where the use of a lifetime parameter can be justified, `serde::de::Deserialize` is such an example. But in general, you probably should think twice before using it.
+
+**Updates:**
+
+- 2023-Mar-05: Fixed an inaccuracy in the explanation of the error. Thanks to [this awesome explanation](https://users.rust-lang.org/t/nll-vs-dropglue-lifetime-parameters-on-traits/90346) by Daniel H-M.
